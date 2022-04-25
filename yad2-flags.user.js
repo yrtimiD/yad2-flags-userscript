@@ -6,6 +6,8 @@
 // @author       Dmitry Gurovich
 // @website      https://github.com/yrtimiD/yad2-flags-userscript
 // @supportURL   https://github.com/yrtimiD/yad2-flags-userscript/issues
+// @updateURL    https://github.com/yrtimiD/yad2-flags-userscript/raw/main/yad2-flags.user.js
+// @downloadURL  https://github.com/yrtimiD/yad2-flags-userscript/raw/main/yad2-flags.user.js
 // @match        https://www.yad2.co.il/realestate/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=yad2.co.il
 // @grant        none
