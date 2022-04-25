@@ -4,7 +4,7 @@
 // @version      0.2
 // @description  Adds dedicated flag buttons for easier marking of search results. Currently "hide" and "done" buttons are supported.
 // @author       Dmitry Gurovich
-// @website	     https://github.com/yrtimiD/yad2-flags-userscript
+// @website      https://github.com/yrtimiD/yad2-flags-userscript
 // @supportURL   https://github.com/yrtimiD/yad2-flags-userscript/issues
 // @match        https://www.yad2.co.il/realestate/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=yad2.co.il
