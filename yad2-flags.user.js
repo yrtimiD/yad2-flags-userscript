@@ -2,10 +2,12 @@
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
 // @version      0.2
-// @description  Adds dedicated flag buttons for easier marking of search results
-// @author       You
-// @match        https://www.yad2.co.il/realestate/forsale/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=co.il
+// @description  Adds dedicated flag buttons for easier marking of search results. Currently "hide" and "done" buttons are supported.
+// @author       Dmitry Gurovich
+// @website	 https://github.com/yrtimiD/yad2-flags-userscript
+// @supportURL   https://github.com/yrtimiD/yad2-flags-userscript/issues
+// @match        https://www.yad2.co.il/realestate/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=yad2.co.il
 // @grant        none
 // @run-at document-end
 // ==/UserScript==
