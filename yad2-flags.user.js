@@ -4,6 +4,7 @@
 // @version      0.4
 // @description  Adds dedicated flag buttons for easier marking of search results. Currently "pin", "done" and "hide" flags are supported. Adding new flags is super easy.
 // @author       Dmitry Gurovich
+// @license      UNLICENSE
 // @website      https://github.com/yrtimiD/yad2-flags-userscript
 // @supportURL   https://github.com/yrtimiD/yad2-flags-userscript/issues
 // @match        https://www.yad2.co.il/realestate/*
