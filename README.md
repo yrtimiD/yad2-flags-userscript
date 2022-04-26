@@ -1,5 +1,5 @@
 # yad2-flags-userscript
-UserScript for yad2.co.il which adds dedicated flag buttons for search results
+UserScript for [yad2.co.il/realestate](https://www.yad2.co.il/realestate) which adds dedicated flag buttons for search results
 
 ![screenshot](screenshots/screenshot_1.png)
 
