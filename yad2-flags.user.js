@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
-// @version      0.3
-// @description  Adds dedicated flag buttons for easier marking of search results. Currently "hide" and "done" buttons are supported.
+// @version      0.4
+// @description  Adds dedicated flag buttons for easier marking of search results. Currently "pin", "done" and "hide" flags are supported. Adding new flags is super easy.
 // @author       Dmitry Gurovich
 // @website      https://github.com/yrtimiD/yad2-flags-userscript
 // @supportURL   https://github.com/yrtimiD/yad2-flags-userscript/issues
@@ -19,6 +19,10 @@
 
 	const PREFIX = 'yad2flags'; //just a random text to ensure uniqueness
 
+	/**
+	 * Defines all available flags.
+	 * To add a new flag add a new field in FLAGS and (optionally), declare a new class in the below style block.
+	 */
 	const FLAGS = {
 		pin: { icon: '📌', tooltip:'Pin item', class:`${PREFIX}-pin`},
 		done: { icon: '✅', tooltip: 'Mark item as done', class: `${PREFIX}-done` },
