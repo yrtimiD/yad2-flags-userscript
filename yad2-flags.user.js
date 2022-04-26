@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Adds dedicated flag buttons for easier marking of search results. Currently "hide" and "done" buttons are supported.
 // @author       Dmitry Gurovich
 // @website      https://github.com/yrtimiD/yad2-flags-userscript
@@ -14,27 +14,34 @@
 // @run-at       document-end
 // ==/UserScript==
 
-(function() {
+(function () {
 	'use strict';
 
-	const PREFIX = 'iddqd_'; //just a random text to ensure uniqueness
-	const HIDDEN_CLASS = `${PREFIX}hidden`;
-	const DONE_CLASS = `${PREFIX}done`;
+	const PREFIX = 'yad2flags'; //just a random text to ensure uniqueness
+
+	const FLAGS = {
+		pin: { icon: '📌', tooltip:'Pin item', class:`${PREFIX}-pin`},
+		done: { icon: '✅', tooltip: 'Mark item as done', class: `${PREFIX}-done` },
+		hidden: { icon: '❌' /*'💩'*/, tooltip: 'Hide item', class: `${PREFIX}-hidden` },
+	};
 
 	const frag = document.createRange().createContextualFragment(`
 	<style>
-		.${HIDDEN_CLASS}{
-			opacity:50%;
-		}
-		.${DONE_CLASS}{
-			opacity:50%;
-			border: green 1px solid;
-		}
-		.${PREFIX}buttons {
+		.${PREFIX}-buttons {
 			display: flex;
 			flex-direction: column;
 			justify-content: space-evenly;
 			height: 85px;
+		}
+		.${FLAGS.pin.class}{
+			border: red 2px dashed;
+		}
+		.${FLAGS.done.class}{
+			opacity:50%;
+			border: green 2px solid;
+		}
+		.${FLAGS.hidden.class}{
+			opacity:30%;
 		}
 	</style>
 	`);
@@ -42,91 +49,66 @@
 
 
 	function setFlag(flag, id, value) {
-		let data = JSON.parse(localStorage.getItem(PREFIX + flag)) ?? {};
-		data[id] = value;
-		localStorage.setItem(PREFIX + flag, JSON.stringify(data));
+		let data = JSON.parse(localStorage.getItem(PREFIX)) ?? {};
+		(data[id] = data[id] ?? {})[flag] = value;
+		localStorage.setItem(PREFIX, JSON.stringify(data));
 	}
 
 	function getFlag(flag, id, defaultValue) {
-		let data = JSON.parse(localStorage.getItem(PREFIX + flag)) ?? {};
-		return data[id] ?? defaultValue;
+		let data = JSON.parse(localStorage.getItem(PREFIX)) ?? {};
+		return data[id]?.[flag] ?? defaultValue;
 	}
 
-	function toggleHidden(id, ele, hidden) {
-		console.log(`${id} is set to be ${hidden ? 'hidden' : 'visible'}`);
-		setFlag('hidden', id, hidden);
+	function toggleFlag(flag, id, ele, value) {
+		console.log(`${id} flagged with ${flag}:${value}`);
+		setFlag(flag, id, value);
 
 		let item = ele.closest(".feeditem");
-		if (hidden) {
-			item.classList.add(HIDDEN_CLASS);
+		if (value === true) {
+			item.classList.add(FLAGS[flag].class);
 		} else {
-			item.classList.remove(HIDDEN_CLASS);
+			item.classList.remove(FLAGS[flag].class);
 		}
 	}
 
-	function addHideButton(id, ele) {
-		let frag = document.createRange().createContextualFragment(`<button title="Toggle hidden flag">&#128169;</button>`);
-		frag.children[0].addEventListener('click', (e) => { toggleHidden(id, ele, !getFlag('hidden', id, true)); e.stopPropagation(); });
-		let container = ele.querySelector(`.${PREFIX}buttons`);
+	function addButton(flag, id, ele) {
+		let frag = document.createRange().createContextualFragment(`<button title="${FLAGS[flag].tooltip}">${FLAGS[flag].icon}</button>`);
+		frag.children[0].addEventListener('click', (e) => { toggleFlag(flag, id, ele, !getFlag(flag, id, true)); e.stopPropagation(); });
+		let container = ele.querySelector(`.${PREFIX}-buttons`);
 		container.append(frag);
 	}
-
-	function toggleDone(id, ele, done) {
-		console.log(`${id} is set to be ${done ? 'done' : 'undone'}`);
-		setFlag('done', id, done);
-
-		let item = ele.closest(".feeditem");
-		if (done) {
-			item.classList.add(DONE_CLASS);
-		} else {
-			item.classList.remove(DONE_CLASS);
-		}
-	}
-
-	function addDoneButton(id, ele) {
-		let frag = document.createRange().createContextualFragment(`<button title="Toggle done flag">&#10004;</button>`);
-		frag.children[0].addEventListener('click', (e) => { toggleDone(id, ele, !getFlag('done', id, true)); e.stopPropagation(); });
-		let container = ele.querySelector(`.${PREFIX}buttons`);
-		container.append(frag);
-	}
-
 
 	/** @param ele - item-id element */
-	function initElement(ele) {
-		ele.append(document.createRange().createContextualFragment(`<div class="${PREFIX}buttons"></div>`));
+	function initItemElement(ele) {
+		if (ele.querySelector(`.${PREFIX}-buttons`)) return;
+
+		ele.append(document.createRange().createContextualFragment(`<div class="${PREFIX}-buttons"></div>`));
 
 		let id = ele.getAttribute('item-id');
-		addHideButton(id, ele);
-		toggleHidden(id, ele, getFlag('hidden', id, false));
-		addDoneButton(id, ele);
-		toggleDone(id, ele, getFlag('done', id, false));
+		Object.keys(FLAGS).forEach(flag => {
+			addButton(flag, id, ele);
+			toggleFlag(flag, id, ele, getFlag(flag, id, false));
+		});
 	}
 
-	function watchList(changes) {
-		console.log('feed_list changed');
-		isDirty = true;
-		// changes.forEach(change=>{
-		//     change.addedNodes?.forEach(n=>{
-		//       if (n.nodeType !== Node.ELEMENT_NODE) return;
-		//       let ele = n.querySelector('[item-id]');
-		//       if (ele) initElement(ele);
-		//     });
-		// });
-	}
-
-	let isDirty = true;
-	function startObserveList() {
-		let list = document.querySelector('.feed_list');
-		if (list) {
-			const observer = new MutationObserver(watchList);
-			observer.observe(list, { childList: true });
-
-			// dirty+ugly but it works. TODO: find a better way to await for list changes
-			setInterval(() => { if (isDirty) { document.querySelectorAll('[item-id]').forEach(ele => initElement(ele)); isDirty = false; } }, 1000);
-		} else {
-			setTimeout(startObserveList, 1000);
+	let lastUpdate = 0;
+	let pending = null;
+	function update() {
+		if (Date.now() - lastUpdate < 5000) {
+			if (!pending) pending = setTimeout(update, lastUpdate + 5000 - Date.now());
+			return;
 		}
+		lastUpdate = Date.now();
+		pending = null;
+		document.querySelectorAll('.feed_list [item-id]').forEach(ele => initItemElement(ele));
 	}
 
-	startObserveList();
+	function startObserver() {
+		const observer = new MutationObserver(() => update());
+		observer.observe(document.body, { childList: true, subtree: true });
+
+		update();
+	}
+
+	startObserver();
 })();
