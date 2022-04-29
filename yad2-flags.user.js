@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  Adds dedicated flag buttons for easier marking of real estate search results. Currently "pin", "done" and "hide" flags are supported. Adding new flags is super easy.
 // @author       Dmitry Gurovich
 // @license      UNLICENSE
@@ -13,43 +13,82 @@
 // @run-at       document-end
 // ==/UserScript==
 
+/**
+ * Changelog
+ * 0.5 Better icons, moved icons container to the search item start
+ */
 (function () {
 	'use strict';
 
-	const PREFIX = 'yad2flags'; //just a random text to ensure uniqueness
+	const PREFIX = 'yad2flags';
 
 	/**
 	 * Defines all available flags.
 	 * To add a new flag add a new field in FLAGS and (optionally), declare a new class in the below style block.
 	 */
 	const FLAGS = {
-		pin: { icon: '📌', tooltip:'Pin item', class:`${PREFIX}-pin`},
-		done: { icon: '✅', tooltip: 'Mark item as done', class: `${PREFIX}-done` },
-		hidden: { icon: '❌' /*'💩'*/, tooltip: 'Hide item', class: `${PREFIX}-hidden` },
+		save: { icon: 'icon-save', tooltip: 'Save item', class: `${PREFIX}-save` },
+		done: { icon: 'icon-done', tooltip: 'Mark item as done', class: `${PREFIX}-done` },
+		hidden: { icon: 'icon-hidden', tooltip: 'Hide item', class: `${PREFIX}-hidden` },
 	};
 
-	const frag = document.createRange().createContextualFragment(`
-	<style>
-		.${PREFIX}-buttons {
-			display: flex;
-			flex-direction: column;
-			justify-content: space-evenly;
-			height: 85px;
-		}
-		.${FLAGS.pin.class}{
-			border: red 2px dashed;
-		}
-		.${FLAGS.done.class}{
-			opacity:50%;
-			border: green 2px solid;
-		}
-		.${FLAGS.hidden.class}{
-			opacity:30%;
-		}
-	</style>
-	`);
-	document.querySelector('head').append(frag);
+	function setupSearchPageDependencies() {
+		const frag = document.createRange().createContextualFragment(`
+		<style>
+			input.${PREFIX}-icon-save {
+				background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M18 2H6c-1.103 0-2 .897-2 2v18l8-4.572L20 22V4c0-1.103-.897-2-2-2zm0 16.553l-6-3.428l-6 3.428V4h12v14.553z"/></svg>');
+			}
 
+			input:checked.${PREFIX}-icon-save {
+				background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M19 10.132v-6c0-1.103-.897-2-2-2H7c-1.103 0-2 .897-2 2V22l7-4.666L19 22V10.132z"/></svg>');
+			}
+
+			input.${PREFIX}-icon-done {
+				background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2V7c0-1.103-.897-2-2-2H7zm0 12V7h10l.002 10H7z"/></svg>');
+			}
+
+			input:checked.${PREFIX}-icon-done {
+				background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2V7c0-1.103-.897-2-2-2H7zm0 12V7h10l.002 10H7z"/><path fill="currentColor" d="M10.996 12.556L9.7 11.285l-1.4 1.43l2.704 2.647l4.699-4.651l-1.406-1.422z"/></svg>');
+			}
+
+			input.${PREFIX}-icon-hidden {
+				background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M12 9a3.02 3.02 0 0 0-3 3c0 1.642 1.358 3 3 3c1.641 0 3-1.358 3-3c0-1.641-1.359-3-3-3z"/><path fill="currentColor" d="M12 5c-7.633 0-9.927 6.617-9.948 6.684L1.946 12l.105.316C2.073 12.383 4.367 19 12 19s9.927-6.617 9.948-6.684l.106-.316l-.105-.316C21.927 11.617 19.633 5 12 5zm0 12c-5.351 0-7.424-3.846-7.926-5C4.578 10.842 6.652 7 12 7c5.351 0 7.424 3.846 7.926 5c-.504 1.158-2.578 5-7.926 5z"/></svg>');
+			}
+
+			input:checked.${PREFIX}-icon-hidden {
+				background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M12 19c.946 0 1.81-.103 2.598-.281l-1.757-1.757c-.273.021-.55.038-.841.038c-5.351 0-7.424-3.846-7.926-5a8.642 8.642 0 0 1 1.508-2.297L4.184 8.305c-1.538 1.667-2.121 3.346-2.132 3.379a.994.994 0 0 0 0 .633C2.073 12.383 4.367 19 12 19zm0-14c-1.837 0-3.346.396-4.604.981L3.707 2.293L2.293 3.707l18 18l1.414-1.414l-3.319-3.319c2.614-1.951 3.547-4.615 3.561-4.657a.994.994 0 0 0 0-.633C21.927 11.617 19.633 5 12 5zm4.972 10.558l-2.28-2.28c.19-.39.308-.819.308-1.278c0-1.641-1.359-3-3-3c-.459 0-.888.118-1.277.309L8.915 7.501A9.26 9.26 0 0 1 12 7c5.351 0 7.424 3.846 7.926 5c-.302.692-1.166 2.342-2.954 3.558z"/></svg>');
+			}
+
+			.feeditem {
+				display: flex; // fixes layout for our buttons container
+			}
+
+			.${PREFIX}-buttons {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-evenly;
+			}
+
+			.${PREFIX}-button {
+				width: 16px;
+				height: 16px;
+				appearance: none;
+			}
+
+			.${FLAGS.save.class}{
+				border: red 2px dashed;
+			}
+			.${FLAGS.done.class}{
+				opacity:50%;
+				border: green 2px solid;
+			}
+			.${FLAGS.hidden.class}{
+				opacity:30%;
+			}
+		</style>
+		`);
+		document.querySelector('head').append(frag);
+	}
 
 	function setFlag(flag, id, value) {
 		let data = JSON.parse(localStorage.getItem(PREFIX)) ?? {};
@@ -66,31 +105,38 @@
 		console.log(`${id} flagged with ${flag}:${value}`);
 		setFlag(flag, id, value);
 
-		let item = ele.closest(".feeditem");
 		if (value === true) {
-			item.classList.add(FLAGS[flag].class);
+			ele.classList.add(FLAGS[flag].class);
 		} else {
-			item.classList.remove(FLAGS[flag].class);
+			ele.classList.remove(FLAGS[flag].class);
 		}
 	}
 
-	function addButton(flag, id, ele) {
-		let frag = document.createRange().createContextualFragment(`<button title="${FLAGS[flag].tooltip}">${FLAGS[flag].icon}</button>`);
-		frag.children[0].addEventListener('click', (e) => { toggleFlag(flag, id, ele, !getFlag(flag, id, true)); e.stopPropagation(); });
-		let container = ele.querySelector(`.${PREFIX}-buttons`);
+	/**
+	 * 
+	 * @param {string} flag Flag type
+	 * @param {string} id Item ID
+	 * @param {} container Buttons container element
+	 * @param {*} ele Item element (for assigning flagged style)
+	 */
+	function addButton(flag, id, container, ele) {
+		let state = getFlag(flag, id, false);
+		let frag = document.createRange().createContextualFragment(`<input type="checkbox"${state ?" checked":""} title="${FLAGS[flag].tooltip}" class="${PREFIX}-button ${PREFIX}-icon-${flag}" />`);
+		frag.children[0].addEventListener('change', (e) => { toggleFlag(flag, id, ele, e.target.checked); e.stopPropagation(); });
 		container.append(frag);
 	}
 
-	/** @param ele - item-id element */
-	function initItemElement(ele) {
-		if (ele.querySelector(`.${PREFIX}-buttons`)) return;
+	function initItemElement(itemElement) {
+		if (itemElement.querySelector(`.${PREFIX}-buttons`)) return;
+		let id = itemElement.querySelector('[item-id]')?.getAttribute('item-id');
+		if (!id) return;
 
-		ele.append(document.createRange().createContextualFragment(`<div class="${PREFIX}-buttons"></div>`));
+		itemElement.insertAdjacentHTML('afterbegin', `<div class="${PREFIX}-buttons"></div>`);
 
-		let id = ele.getAttribute('item-id');
+		let container = itemElement.querySelector(`.${PREFIX}-buttons`);
 		Object.keys(FLAGS).forEach(flag => {
-			addButton(flag, id, ele);
-			toggleFlag(flag, id, ele, getFlag(flag, id, false));
+			addButton(flag, id, container, itemElement);
+			toggleFlag(flag, id, itemElement, getFlag(flag, id, false));
 		});
 	}
 
@@ -103,15 +149,33 @@
 		}
 		lastUpdate = Date.now();
 		pending = null;
-		document.querySelectorAll('.feed_list [item-id]').forEach(ele => initItemElement(ele));
+		document.querySelectorAll('.feed_list .feeditem').forEach(ele => initItemElement(ele));
 	}
 
-	function startObserver() {
+	function initSearchPageMode() {
+		setupSearchPageDependencies();
+
 		const observer = new MutationObserver(() => update());
 		observer.observe(document.body, { childList: true, subtree: true });
 
 		update();
 	}
 
-	startObserver();
+	function initItemPageMode() {
+		let id = window.location.pathname.match(/^\/item\/([A-Za-z0-9]+)/)?.[1];
+		if (id) {
+			let container = document.querySelector('.like_icon_wrapper');
+			let itemElement = document.querySelector('.top_components');
+			Object.keys(FLAGS).forEach(flag => {
+				addButton(flag, id, container, itemElement);
+				toggleFlag(flag, id, itemElement, getFlag(flag, id, false));
+			});
+		}
+	}
+
+	if (/^\/item\//.test(window.location.pathname)) {
+		initItemPageMode();
+	} else {
+		initSearchPageMode();
+	}
 })();
