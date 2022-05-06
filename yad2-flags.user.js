@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  Adds dedicated flag buttons for easier marking of real estate search results. Currently "pin", "done" and "hide" flags are supported. Adding new flags is super easy.
 // @author       Dmitry Gurovich
 // @license      UNLICENSE
@@ -16,6 +16,7 @@
 
 /**
  * Changelog:
+ * 0.7 Save in the localStorage only flagged entries
  * 0.6 Flags on single item page
  * 0.5 Better icons, moved icons container to the search item start
  */
@@ -126,6 +127,7 @@
 	function setFlag(flag, id, value) {
 		let data = JSON.parse(localStorage.getItem(PREFIX)) ?? {};
 		(data[id] = data[id] ?? {})[flag] = value;
+		if (Object.values(data[id]).reduce((p, c) => p || c, false) === false) delete data[id];
 		localStorage.setItem(PREFIX, JSON.stringify(data));
 	}
 
@@ -157,6 +159,7 @@
 		let frag = document.createRange().createContextualFragment(`<input type="checkbox"${state ? " checked" : ""} title="${FLAGS[flag].tooltip}" class="${PREFIX}-button ${PREFIX}-icon-${flag}" />`);
 		frag.children[0].addEventListener('change', (e) => { toggleFlag(flag, id, ele, e.target.checked); e.stopPropagation(); });
 		container.append(frag);
+		if (state === true) toggleFlag(flag, id, ele, state);
 	}
 
 	function initItemElement(itemElement) {
@@ -169,7 +172,6 @@
 		let container = itemElement.querySelector(`.${PREFIX}-buttons`);
 		Object.keys(FLAGS).forEach(flag => {
 			addButton(flag, id, container, itemElement);
-			toggleFlag(flag, id, itemElement, getFlag(flag, id, false));
 		});
 	}
 
