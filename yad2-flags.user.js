@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.8
 // @description  Adds dedicated flag buttons for easier marking of real estate search results. Currently "pin", "done" and "hide" flags are supported. Adding new flags is super easy.
 // @author       Dmitry Gurovich
 // @license      UNLICENSE
@@ -16,6 +16,7 @@
 
 /**
  * Changelog:
+ * 0.8 Styling
  * 0.7 Save in the localStorage only flagged entries
  * 0.6 Flags on single item page
  * 0.5 Better icons, moved icons container to the search item start
@@ -66,14 +67,17 @@
 				width: 16px;
 				height: 16px;
 				appearance: none;
+				cursor: pointer;
+				border-radius: 9px;
+				background-color: white;
 			}
 
 			.${FLAGS.save.class}{
-				border: red 2px dashed;
+				outline: red 2px dashed;
 			}
 			.${FLAGS.done.class}{
 				opacity:50%;
-				border: green 2px solid;
+				outline: green 2px solid;
 			}
 			.${FLAGS.hidden.class}{
 				opacity:30%;
@@ -107,12 +111,9 @@
 	function setupItemPageDependencies() {
 		const frag = document.createRange().createContextualFragment(`
 		<style type="text/css">
-			--${PREFIX}-icon-size: 24px;
-
 			.${PREFIX}-buttons {
-				display: flex;
-				flex-direction: row;
-				justify-content: space-evenly;
+				display: inline-block;
+				margin-right: 4px;
 			}
 
 			.${PREFIX}-button {
@@ -148,7 +149,6 @@
 	}
 
 	/**
-	 * 
 	 * @param {string} flag Flag type
 	 * @param {string} id Item ID
 	 * @param {} container Buttons container element
@@ -197,7 +197,7 @@
 	function initItemPageMode() {
 		let id = window.location.pathname.match(/^\/item\/([A-Za-z0-9]+)/)?.[1];
 		if (id) {
-			document.querySelector('.like_icon_wrapper').insertAdjacentHTML('afterbegin', `<div class="${PREFIX}-buttons"></div>`);
+			document.querySelector('.like_icon_wrapper').insertAdjacentHTML('beforeend', `<div class="${PREFIX}-buttons"></div>`);
 			let container = document.querySelector(`.${PREFIX}-buttons`);
 			let itemElement = document.querySelector('.top_components');
 			Object.keys(FLAGS).forEach(flag => {
