@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         yad2-flags
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.9
 // @description  Adds dedicated flag buttons for easier marking of real estate search results. Currently "pin", "done" and "hide" flags are supported. Adding new flags is super easy.
 // @author       Dmitry Gurovich
 // @license      UNLICENSE
@@ -16,6 +16,7 @@
 
 /**
  * Changelog:
+ * 0.9 Style fix
  * 0.8 Styling
  * 0.7 Save in the localStorage only flagged entries
  * 0.6 Flags on single item page
@@ -90,7 +91,7 @@
 		const frag = document.createRange().createContextualFragment(`
 		<style type="text/css">
 			.feeditem {
-				display: flex; // fixes layout for our buttons container
+				display: flex; /* fixes layout for buttons container */
 			}
 
 			.${PREFIX}-buttons {
